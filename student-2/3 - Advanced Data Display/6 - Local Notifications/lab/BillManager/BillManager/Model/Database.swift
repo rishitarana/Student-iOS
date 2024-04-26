@@ -12,8 +12,8 @@ class Database {
 
     static let shared = Database()
         
-    private func loadBills() -> [UUID:Bill]? {
-        var bills = [UUID:Bill]()
+    private func loadBills() -> [Bill.ID:Bill]? {
+        var bills = [Bill.ID:Bill]()
         
         do {
             let storageDirectory = try FileManager.default.url(for: .documentDirectory, in: .userDomainMask, appropriateFor: nil, create: true)
@@ -30,7 +30,7 @@ class Database {
         return bills
     }
     
-    private func saveBills(_ bills: [UUID:Bill]) {
+    private func saveBills(_ bills: [Bill.ID:Bill]) {
         do {
             let storageDirectory = try FileManager.default.url(for: .documentDirectory, in: .userDomainMask, appropriateFor: nil, create: true)
             let storageURL = storageDirectory.appendingPathComponent("bills").appendingPathExtension("json")
@@ -41,8 +41,8 @@ class Database {
         }
     }
     
-    private var _billsOptional: [UUID:Bill]?
-    private var _billsLookup: [UUID:Bill] {
+    private var _billsOptional: [Bill.ID:Bill]?
+    private var _billsLookup: [Bill.ID:Bill] {
         get {
             if _billsOptional == nil {
                 _billsOptional = loadBills() ?? [:]
@@ -77,14 +77,19 @@ class Database {
         saveBills(_billsLookup)
     }
     
-    func delete(bill: Bill) {
-        _billsLookup[bill.id] = nil
+    func deleteBill(withID id: Bill.ID) {
+        _billsLookup[id] = nil
     }
     
-    func getBill(withID id: UUID) -> Bill? {
+    func getBill(withID id: Bill.ID) -> Bill? {
         return _billsLookup[id]
     }
     
+    func getBill(notificationID: String) -> Bill? {
+        guard let keyValue = _billsLookup.first(where: { $0.value.notificationID == notificationID }) else { return nil }
+        
+        return keyValue.value
+    }
 }
 
 extension Bill: Comparable {

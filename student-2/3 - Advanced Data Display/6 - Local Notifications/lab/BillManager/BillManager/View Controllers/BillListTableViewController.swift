@@ -6,7 +6,7 @@
 import UIKit
 import CoreData
 
-private class SwipeableDataSource: UITableViewDiffableDataSource<Int, Bill> {
+private class SwipeableDataSource: UITableViewDiffableDataSource<Int, Bill.ID> {
     override func tableView(_ tableView: UITableView, canEditRowAt indexPath: IndexPath) -> Bool {
         true
     }
@@ -20,7 +20,7 @@ class BillListTableViewController: UITableViewController {
         super.viewDidLoad()
         navigationItem.leftBarButtonItem = editButtonItem
         
-        dataSource = SwipeableDataSource(tableView: tableView) { tableView, indexPath, bill in
+        dataSource = SwipeableDataSource(tableView: tableView) { tableView, indexPath, billID in
             let cell = tableView.dequeueReusableCell(withIdentifier: "BillCell", for: indexPath)
             
             let bill = Database.shared.bills[indexPath.row]
@@ -43,16 +43,16 @@ class BillListTableViewController: UITableViewController {
     }
     
     func updateSnapshot() {
-        var snapshot = NSDiffableDataSourceSnapshot<Int, Bill>()
+        var snapshot = NSDiffableDataSourceSnapshot<Int, Bill.ID>()
         snapshot.appendSections([0])
-        snapshot.appendItems(Database.shared.bills, toSection: 0)
+        snapshot.appendItems(Database.shared.bills.map(\.id), toSection: 0)
         dataSource.apply(snapshot, animatingDifferences: true)
     }
     
     override func tableView(_ tableView: UITableView, trailingSwipeActionsConfigurationForRowAt indexPath: IndexPath) -> UISwipeActionsConfiguration? {
         let deleteAction = UIContextualAction(style: .destructive, title: "Delete") { (contextualAction, view, completionHandler) in
-            guard let bill = self.dataSource.itemIdentifier(for: indexPath) else { return }
-            Database.shared.delete(bill: bill)
+            guard let billID = self.dataSource.itemIdentifier(for: indexPath) else { return }
+            Database.shared.deleteBill(withID: billID)
             Database.shared.save()
             self.updateSnapshot()
             completionHandler(true)
